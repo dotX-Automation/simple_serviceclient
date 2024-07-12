@@ -4,7 +4,7 @@ C++ library that wraps the `rclcpp` service client providing a simpler interface
 
 ## Contents
 
-This package offers the `simple_serviceclient_cpp::Client<ServiceT>` class template, that can be used to create a ROS 2 service client just by passing the node and the service name.
+This package offers the `simple_serviceclient::Client<ServiceT>` class template, that can be used to create a ROS 2 service client just by passing the node and the service name.
 
 ### Features
 

@@ -33,7 +33,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-namespace simple_serviceclient_cpp
+namespace simple_serviceclient
 {
 
 /**
@@ -133,6 +133,6 @@ private:
   std::shared_ptr<rclcpp::Client<ServiceT>> client_;
 };
 
-} // namespace simple_serviceclient_cpp
+} // namespace simple_serviceclient
 
 #endif // SIMPLE_SERVICECLIENT_CPP__SIMPLE_SERVICECLIENT_HPP_
