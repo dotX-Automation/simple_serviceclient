@@ -10,7 +10,7 @@ This package offers the `simple_serviceclient::Client<ServiceT>` class template,
 
 The service can be called in two different fashions:
 
-- `call_sync`: synchronous call, that blocks until the service response is received but spins the node in the meantime, returning the response.
+- `call_sync`: synchronous call, that blocks until the service response is received but, if requested, spins the node in the meantime, returning the response.
 - `call_async`: asynchronous call, that returns a `FutureAndRequestId` object that can be used to retrieve the response when it is received.
 
 ---

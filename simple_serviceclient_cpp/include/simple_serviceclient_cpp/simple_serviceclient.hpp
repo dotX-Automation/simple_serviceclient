@@ -96,14 +96,20 @@ public:
    * @brief Calls the service and spins the node while waiting.
    *
    * @param request The request to be sent to the server.
+   * @param spin Enables node spinning, else this will block waiting on the future ("get" call).
    * @return The response received from the server.
    *
-   * @throws RuntimeError if interrupted while waiting.
+   * @throws std::runtime_error if interrupted while waiting.
    */
-  std::shared_ptr<ResponseT> call_sync(std::shared_ptr<RequestT> request)
+  std::shared_ptr<ResponseT> call_sync(std::shared_ptr<RequestT> request, bool spin = false)
   {
     // Call the service
     auto response_future = client_->async_send_request(request);
+
+    // Wait synchronously if requested
+    if (!spin) {
+      return response_future.get();
+    }
 
     // Spin the node while waiting
     auto code = rclcpp::spin_until_future_complete(node_->shared_from_this(), response_future);
