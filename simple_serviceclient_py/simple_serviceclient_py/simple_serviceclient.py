@@ -69,19 +69,26 @@ class Client():
         self._node.get_logger().info(
             "Initialized client for service {}".format(self._client.srv_name))
 
-    def call_sync(self, request: ReqType) -> RespType:
+    def call_sync(self, request: ReqType, timeout_sec: float = None) -> RespType:
         """
         Calls the service, returns only when the request has been completed.
         Spins the node while waiting.
 
         :param request: Service request to send.
-        :returns: Service response.
+        :param timeout_sec: Timeout for the service call (seconds).
+        :returns: Service response, or None if the call timed out.
         """
         resp_future = self._client.call_async(request)
-        rclpy.spin_until_future_complete(self._node, resp_future)
+        if timeout_sec is None or timeout_sec <= 0.0:
+            rclpy.spin_until_future_complete(self._node, resp_future)
+        else:
+            rclpy.spin_until_future_complete(self._node, resp_future, None, timeout_sec)
         if not rclpy.ok():
             raise RuntimeError(
                 "Interrupted while waiting for response from service {}".format(self._client.srv_name))
+        if not resp_future.done():
+            self._client.remove_pending_request(resp_future)
+            return None
         return resp_future.result()
 
     def call_async(self, request: ReqType) -> Future:

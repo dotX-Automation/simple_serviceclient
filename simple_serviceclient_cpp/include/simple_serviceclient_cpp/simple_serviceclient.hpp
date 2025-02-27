@@ -103,11 +103,15 @@ public:
    *
    * @param request The request to be sent to the server.
    * @param spin Enables node spinning, else this will block waiting on the future ("get" call).
+   * @param timeout_msec The timeout to be used when waiting for the response (milliseconds).
    * @return The response received from the server.
    *
    * @throws std::runtime_error if interrupted while waiting.
    */
-  std::shared_ptr<ResponseT> call_sync(std::shared_ptr<RequestT> request, bool spin = false)
+  std::shared_ptr<ResponseT> call_sync(
+    std::shared_ptr<RequestT> request,
+    bool spin = false,
+    int64_t timeout_msec = 0)
   {
     // Call the service
     auto response_future = client_->async_send_request(request);
@@ -118,13 +122,21 @@ public:
     }
 
     // Spin the node while waiting
-    auto code = rclcpp::spin_until_future_complete(node_->shared_from_this(), response_future);
+    rclcpp::FutureReturnCode code;
+    if (timeout_msec <= 0) {
+      code = rclcpp::spin_until_future_complete(node_->shared_from_this(), response_future);
+    } else {
+      code = rclcpp::spin_until_future_complete(
+        node_->shared_from_this(),
+        response_future,
+        std::chrono::milliseconds(timeout_msec));
+    }
     if (code == rclcpp::FutureReturnCode::SUCCESS) {
       return response_future.get();
     } else {
       client_->remove_pending_request(response_future);
       throw std::runtime_error(
-              "Interrupted while waiting for reponse from service " +
+              "Interrupted while waiting for response from service " +
               std::string(client_->get_service_name()));
     }
   }
