@@ -49,6 +49,12 @@ public:
   using RequestT = typename ServiceT::Request;
   using ResponseT = typename ServiceT::Response;
 
+  using SharedPtr = std::shared_ptr<Client<ServiceT>>;
+  using WeakPtr = std::weak_ptr<Client<ServiceT>>;
+  using UniquePtr = std::unique_ptr<Client<ServiceT>>;
+  using ConstSharedPtr = std::shared_ptr<const Client<ServiceT>>;
+  using ConstWeakPtr = std::weak_ptr<const Client<ServiceT>>;
+
   /**
    * @brief Constructor, can wait for the server to become active.
    *
