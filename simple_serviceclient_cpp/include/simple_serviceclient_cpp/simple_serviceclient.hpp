@@ -22,8 +22,7 @@
  * limitations under the License.
  */
 
-#ifndef SIMPLE_SERVICECLIENT_CPP__SIMPLE_SERVICECLIENT_HPP_
-#define SIMPLE_SERVICECLIENT_CPP__SIMPLE_SERVICECLIENT_HPP_
+#pragma once
 
 #include "visibility_control.h"
 
@@ -83,11 +82,6 @@ public:
         "Service %s not available...",
         service_name.c_str());
     }
-
-    RCLCPP_INFO(
-      node_->get_logger(),
-      "Initialized client for service %s",
-      service_name.c_str());
   }
 
   /**
@@ -142,7 +136,7 @@ public:
   }
 
   /**
-   * @brief Calls the service asynchronously
+   * @brief Calls the service asynchronously.
    *
    * @param request The request to be sent to the server.
    * @return A future object that will contain the response.
@@ -152,11 +146,14 @@ public:
     return client_->async_send_request(request);
   }
 
+  [[nodiscard]] inline const char * get_service_name() const
+  {
+    return client_->get_service_name();
+  }
+
 private:
   rclcpp::Node * node_;
   std::shared_ptr<rclcpp::Client<ServiceT>> client_;
 };
 
 } // namespace simple_serviceclient
-
-#endif // SIMPLE_SERVICECLIENT_CPP__SIMPLE_SERVICECLIENT_HPP_
