@@ -66,9 +66,6 @@ class Client():
             self._node.get_logger().warn(
                 "Service {} not available...".format(self._client.srv_name))
 
-        self._node.get_logger().info(
-            "Initialized client for service {}".format(self._client.srv_name))
-
     def call_sync(self, request: ReqType, timeout_sec: float = None) -> RespType:
         """
         Calls the service, returns only when the request has been completed.
@@ -100,3 +97,7 @@ class Client():
         :returns: Future object for the response.
         """
         return self._client.call_async(request)
+
+    @property
+    def service_name(self) -> str:
+        return self._client.service_name
