@@ -103,36 +103,39 @@ public:
    * @throws std::runtime_error if interrupted while waiting.
    */
   std::shared_ptr<ResponseT> call_sync(
-    std::shared_ptr<RequestT> request,
+    const std::shared_ptr<RequestT> & request,
     bool spin = false,
     int64_t timeout_msec = 0)
   {
-    // Call the service
+    if (!client_) {
+      throw std::runtime_error("Client not initialized.");
+    }
+
     auto response_future = client_->async_send_request(request);
 
-    // Wait synchronously if requested
-    if (!spin) {
-      return response_future.get();
+    auto timeout = (timeout_msec <= 0) ?
+      std::chrono::milliseconds::max() :
+      std::chrono::milliseconds(timeout_msec);
+
+    if (spin) {
+      // Spin the node while waiting for the response
+      auto result = rclcpp::spin_until_future_complete(
+      node_->shared_from_this(), response_future, timeout);
+      // Check the result of the spin
+      if (result == rclcpp::FutureReturnCode::SUCCESS) {
+        return response_future.get();
+      }
+    } else {
+      // Wait for the response without spinning
+      if (response_future.wait_for(timeout) == std::future_status::ready) {
+        return response_future.get();
+      }
     }
 
-    // Spin the node while waiting
-    rclcpp::FutureReturnCode code;
-    if (timeout_msec <= 0) {
-      code = rclcpp::spin_until_future_complete(node_->shared_from_this(), response_future);
-    } else {
-      code = rclcpp::spin_until_future_complete(
-        node_->shared_from_this(),
-        response_future,
-        std::chrono::milliseconds(timeout_msec));
-    }
-    if (code == rclcpp::FutureReturnCode::SUCCESS) {
-      return response_future.get();
-    } else {
-      client_->remove_pending_request(response_future);
-      throw std::runtime_error(
-              "Interrupted while waiting for response from service " +
-              std::string(client_->get_service_name()));
-    }
+    // Handle timeout or interruption
+    client_->remove_pending_request(response_future);
+    throw std::runtime_error("Timeout or interruption while waiting for response from service " +
+        std::string(client_->get_service_name()));
   }
 
   /**
@@ -141,7 +144,8 @@ public:
    * @param request The request to be sent to the server.
    * @return A future object that will contain the response.
    */
-  typename rclcpp::Client<ServiceT>::FutureAndRequestId call_async(std::shared_ptr<RequestT> request)
+  typename rclcpp::Client<ServiceT>::FutureAndRequestId call_async(
+    std::shared_ptr<RequestT> request)
   {
     return client_->async_send_request(request);
   }
