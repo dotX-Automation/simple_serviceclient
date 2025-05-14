@@ -107,20 +107,20 @@ public:
     bool spin = false,
     int64_t timeout_msec = 0)
   {
-    if (!client_) {
-      throw std::runtime_error("Client not initialized.");
-    }
-
     auto response_future = client_->async_send_request(request);
 
+    // The not-a-timeout is the default value for the no-timeout in the rclcpp API
     auto timeout = (timeout_msec <= 0) ?
-      std::chrono::milliseconds::max() :
+      std::chrono::duration<int64_t, std::milli>(-1) :
       std::chrono::milliseconds(timeout_msec);
 
     if (spin) {
       // Spin the node while waiting for the response
-      auto result = rclcpp::spin_until_future_complete(
-      node_->shared_from_this(), response_future, timeout);
+      result = rclcpp::spin_until_future_complete(
+        node_->shared_from_this(),
+        response_future,
+        timeout);
+
       // Check the result of the spin
       if (result == rclcpp::FutureReturnCode::SUCCESS) {
         return response_future.get();
@@ -132,10 +132,9 @@ public:
       }
     }
 
-    // Handle timeout or interruption
+    // Handle timeout/interruption
     client_->remove_pending_request(response_future);
-    throw std::runtime_error("Timeout or interruption while waiting for response from service " +
-        std::string(client_->get_service_name()));
+    return nullptr;
   }
 
   /**
