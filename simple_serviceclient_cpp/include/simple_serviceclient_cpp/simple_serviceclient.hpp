@@ -116,7 +116,7 @@ public:
 
     if (spin) {
       // Spin the node while waiting for the response
-      result = rclcpp::spin_until_future_complete(
+      auto result = rclcpp::spin_until_future_complete(
         node_->shared_from_this(),
         response_future,
         timeout);
