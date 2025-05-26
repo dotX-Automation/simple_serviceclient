@@ -111,7 +111,7 @@ public:
 
     // The not-a-timeout is the default value for the no-timeout in the rclcpp API
     auto timeout = (timeout_msec <= 0) ?
-      std::chrono::duration<int64_t, std::milli>(-1) :
+      std::chrono::milliseconds::max() :
       std::chrono::milliseconds(timeout_msec);
 
     if (spin) {
