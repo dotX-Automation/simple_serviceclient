@@ -20,6 +20,8 @@ September 11, 2022
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+
 import rclpy
 from rclpy.node import Node
 from rclpy.task import Future
@@ -38,6 +40,8 @@ class Client():
     result, but internally runs the back-end by spinning the node when
     necessary, or in an asynchronous way, returning a Future object.
     """
+
+    _POLL_PERIOD = 0.01
 
     def __init__(
             self,
@@ -66,23 +70,24 @@ class Client():
             self._node.get_logger().warn(
                 "Service {} not available...".format(self._client.srv_name))
 
-    def call_sync(self, request: ReqType, timeout_sec: float = None) -> RespType:
+    def call_sync(self, request: ReqType, spin: bool = False, timeout_sec: float = 0.0) -> RespType:
         """
         Calls the service, returns only when the request has been completed.
         Spins the node while waiting.
 
         :param request: Service request to send.
+        :param spin: If True, spins the node while waiting, else the calling thread just sleeps.
         :param timeout_sec: Timeout for the service call (seconds).
         :returns: Service response, or None if the call timed out.
         """
+        # The not-a-timeout is the default value for the no-timeout in the rclpy API
+        timeout_s = timeout_sec if timeout_sec > 0.0 else 5.0
+
         resp_future = self._client.call_async(request)
-        if timeout_sec is None or timeout_sec <= 0.0:
-            rclpy.spin_until_future_complete(self._node, resp_future)
-        else:
+        if spin:
             rclpy.spin_until_future_complete(self._node, resp_future, None, timeout_sec)
-        if not rclpy.ok():
-            raise RuntimeError(
-                "Interrupted while waiting for response from service {}".format(self._client.srv_name))
+        else:
+            self._wait_for(resp_future, timeout_s)
         if not resp_future.done():
             self._client.remove_pending_request(resp_future)
             return None
@@ -101,3 +106,16 @@ class Client():
     @property
     def service_name(self) -> str:
         return self._client.service_name
+
+    def _wait_for(self, future: Future, timeout_sec: float):
+        """
+        Waits for the future to complete or the timeout to expire.
+
+        :param future: Future to wait for.
+        :param timeout_sec: Timeout in seconds.
+        """
+        start_time = time.monotonic()
+        while not future.done():
+            if timeout_sec > 0.0 and time.monotonic() - start_time > timeout_sec:
+                return
+            time.sleep(self._POLL_PERIOD)
