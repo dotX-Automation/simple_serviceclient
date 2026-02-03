@@ -85,7 +85,7 @@ class Client():
 
         resp_future = self._client.call_async(request)
         if spin:
-            rclpy.spin_until_future_complete(self._node, resp_future, None, timeout_sec)
+            rclpy.spin_until_future_complete(self._node, resp_future, None, timeout_s)
         else:
             self._wait_for(resp_future, timeout_s)
         if not resp_future.done():
